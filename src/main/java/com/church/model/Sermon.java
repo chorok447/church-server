@@ -1,17 +1,33 @@
 package com.church.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
+import java.time.LocalDate;
+
+@Setter
+@Getter
+@NoArgsConstructor
 @Entity
 @Table(name = "sermons")
-public class Sermon {
+public class Sermon extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String title;
-    private String date;
+
+    @Column(nullable = false)
+    private LocalDate date;
+
     private String videoUrl;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    private String preacher;
 }

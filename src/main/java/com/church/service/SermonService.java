@@ -1,58 +1,80 @@
 package com.church.service;
 
+import com.church.dto.SermonRequest;
+import com.church.dto.SermonResponse;
+import com.church.exception.ResourceNotFoundException;
 import com.church.model.Sermon;
 import com.church.repository.SermonRepository;
-import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class SermonService {
+
     private final SermonRepository sermonRepository;
 
-    public SermonService(SermonRepository sermonRepository) {
-        this.sermonRepository = sermonRepository;
+    public Page<SermonResponse> getSermons(Pageable pageable) {
+        return sermonRepository.findAll(pageable).map(SermonResponse::from);
     }
 
-
-    public Page<Sermon> getSermons(Pageable pageable) {
-        return sermonRepository.findAll(pageable);
+    public List<SermonResponse> getAllSermonsSorted(Sort sort) {
+        return sermonRepository.findAll(sort)
+                .stream()
+                .map(SermonResponse::from)
+                .collect(Collectors.toList());
     }
 
-    public List<Sermon> getAllSermonsSortedByIdDesc() {
-        return sermonRepository.findAll(Sort.by(Sort.Direction.DESC, "id"));
+    public SermonResponse getSermonById(Long id) {
+        Sermon sermon = sermonRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("설교", id));
+        return SermonResponse.from(sermon);
     }
 
-    public List<Sermon> getAllSermons() {
-        return sermonRepository.findAll();
+    @Transactional
+    public SermonResponse createSermon(SermonRequest request) {
+        Sermon sermon = new Sermon();
+        sermon.setTitle(request.getTitle());
+        sermon.setDate(request.getDate());
+        sermon.setVideoUrl(request.getVideoUrl());
+        sermon.setDescription(request.getDescription());
+        sermon.setPreacher(request.getPreacher());
+        return SermonResponse.from(sermonRepository.save(sermon));
     }
 
-    public Optional<Sermon> getSermonById(Long id) {
-        return sermonRepository.findById(id);
+    @Transactional
+    public SermonResponse updateSermon(Long id, SermonRequest request) {
+        Sermon sermon = sermonRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("설교", id));
+        sermon.setTitle(request.getTitle());
+        sermon.setDate(request.getDate());
+        sermon.setVideoUrl(request.getVideoUrl());
+        sermon.setDescription(request.getDescription());
+        sermon.setPreacher(request.getPreacher());
+        return SermonResponse.from(sermonRepository.save(sermon));
     }
 
-    public Sermon createSermon(Sermon sermon) {
-        return sermonRepository.save(sermon);
-    }
-
-    public Sermon updateSermon(Long id, Sermon updatedSermon) {
-        return sermonRepository.findById(id).map(sermon -> {
-            sermon.setTitle(updatedSermon.getTitle());
-            sermon.setDate(updatedSermon.getDate());
-            sermon.setVideoUrl(updatedSermon.getVideoUrl());
-            return sermonRepository.save(sermon);
-        }).orElseThrow(() -> new RuntimeException("Sermon not found"));
-    }
-
+    @Transactional
     public void deleteSermon(Long id) {
+        if (!sermonRepository.existsById(id)) {
+            throw new ResourceNotFoundException("설교", id);
+        }
         sermonRepository.deleteById(id);
     }
 
-    public Page<Sermon> searchByTitle(String title, Pageable pageable) {
-        return sermonRepository.findByTitleContaining(title, pageable);
+    public Page<SermonResponse> searchByTitle(String title, Pageable pageable) {
+        return sermonRepository.findByTitleContaining(title, pageable).map(SermonResponse::from);
+    }
+
+    public Page<SermonResponse> searchByPreacher(String preacher, Pageable pageable) {
+        return sermonRepository.findByPreacherContaining(preacher, pageable).map(SermonResponse::from);
     }
 }

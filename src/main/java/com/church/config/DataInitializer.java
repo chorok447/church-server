@@ -1,25 +1,28 @@
 package com.church.config;
 
-import com.church.model.Admin;
-import com.church.repository.AdminRepository;
+import com.church.model.Role;
+import com.church.repository.MemberRepository;
+import com.church.service.MemberDetailsService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 
-@Configuration
-public class DataInitializer {
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class DataInitializer implements CommandLineRunner {
 
-    @Bean
-    public CommandLineRunner initData(AdminRepository adminRepository, PasswordEncoder passwordEncoder) {
-        return args -> {
-            if (adminRepository.findByEmail("admin@example.com").isEmpty()) {
-                Admin admin = new Admin();
-                admin.setEmail("admin@example.com");
-                admin.setPassword(passwordEncoder.encode("password123")); // 비밀번호 암호화
-                adminRepository.save(admin);
-                System.out.println("관리자 계정 생성: admin@example.com / password123");
-            }
-        };
+    private final MemberDetailsService memberDetailsService;
+    private final MemberRepository memberRepository;
+
+    @Override
+    public void run(String... args) {
+        if (!memberRepository.existsByEmail("admin@example.com")) {
+            memberDetailsService.createMember("admin@example.com", "password", "관리자", Role.ADMIN);
+            log.info("기본 관리자 계정이 생성되었습니다. (admin@example.com / password)");
+        } else {
+            log.info("기본 관리자 계정이 이미 존재합니다.");
+        }
     }
 }
