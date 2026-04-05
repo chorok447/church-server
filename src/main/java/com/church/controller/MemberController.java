@@ -52,6 +52,15 @@ public class MemberController {
     }
 
     /**
+     * 회원 권한 변경 (ADMIN 전용)
+     */
+    @PatchMapping("/{id}/role")
+    public ResponseEntity<?> toggleRole(@PathVariable Long id) {
+        MemberResponse member = memberDetailsService.toggleRole(id);
+        return ResponseEntity.ok(ApiResponse.success("회원 권한이 변경되었습니다.", member));
+    }
+
+    /**
      * 회원 거부/삭제 (ADMIN 전용)
      */
     @DeleteMapping("/{id}/reject")

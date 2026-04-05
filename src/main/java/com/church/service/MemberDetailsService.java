@@ -82,6 +82,13 @@ public class MemberDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + email));
     }
 
+    @Transactional
+    public void updateLoginInfo(String email, String ip) {
+        Member member = getMemberByEmail(email);
+        member.setLastLoginIp(ip);
+        member.setLastLoginDate(java.time.LocalDateTime.now());
+    }
+
     // ── 관리자 회원 관리 메서드 ──
 
     @Transactional(readOnly = true)
@@ -108,6 +115,17 @@ public class MemberDetailsService implements UserDetailsService {
         Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("회원을 찾을 수 없습니다: " + id));
         member.setApproved(true);
+        return MemberResponse.from(memberRepository.save(member));
+    }
+
+    @Transactional
+    public MemberResponse toggleRole(Long id) {
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("회원을 찾을 수 없습니다: " + id));
+        
+        // Prevent toggling self or specific super admin if needed
+        // For now, simple toggle
+        member.setRole(member.getRole() == Role.ADMIN ? Role.USER : Role.ADMIN);
         return MemberResponse.from(memberRepository.save(member));
     }
 

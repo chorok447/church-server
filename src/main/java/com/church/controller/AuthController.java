@@ -9,6 +9,7 @@ import com.church.security.JwtUtil;
 import com.church.service.MemberDetailsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,9 +17,13 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -29,17 +34,41 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final MemberDetailsService memberDetailsService;
 
+    @Value("${jwt.cookie-name:jwt}")
+    private String cookieName;
+
+    @Value("${jwt.expiration}")
+    private long expirationMs;
+
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
             Member member = memberDetailsService.getMemberByEmail(request.getEmail());
+            
+            String clientIp = httpRequest.getHeader("X-Forwarded-For");
+            if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
+                clientIp = httpRequest.getRemoteAddr();
+            }
+            if (clientIp != null && clientIp.contains(",")) {
+                clientIp = clientIp.split(",")[0].trim();
+            }
+            memberDetailsService.updateLoginInfo(member.getEmail(), clientIp);
+
             String token = jwtUtil.generateToken(member.getEmail(), member.getRole().name());
 
+            // Create HttpOnly Cookie
+            Cookie jwtCookie = new Cookie(cookieName, token);
+            jwtCookie.setHttpOnly(true);
+            jwtCookie.setSecure(false); // Set to true in production with HTTPS
+            jwtCookie.setPath("/");
+            jwtCookie.setMaxAge((int) (expirationMs / 1000));
+            httpResponse.addCookie(jwtCookie);
+
             Map<String, Object> response = new HashMap<>();
-            response.put("token", token);
+            // Still returning basic info, but not the token (it's in the cookie)
             response.put("role", member.getRole().name());
             response.put("name", member.getName());
             response.put("email", member.getEmail());
@@ -47,13 +76,22 @@ public class AuthController {
 
             return ResponseEntity.ok(ApiResponse.success(response));
         } catch (DisabledException e) {
-            // 미승인 회원이 로그인 시도
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(ApiResponse.error("관리자 승인 대기 중입니다. 승인 후 로그인이 가능합니다."));
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.error("이메일 또는 비밀번호가 올바르지 않습니다."));
         }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+        Cookie jwtCookie = new Cookie(cookieName, null);
+        jwtCookie.setHttpOnly(true);
+        jwtCookie.setPath("/");
+        jwtCookie.setMaxAge(0);
+        response.addCookie(jwtCookie);
+        return ResponseEntity.ok(ApiResponse.success("로그아웃 되었습니다."));
     }
 
     @PostMapping("/register")

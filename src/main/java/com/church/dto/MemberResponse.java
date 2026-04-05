@@ -15,6 +15,8 @@ public class MemberResponse {
     private String role;
     private boolean approved;
     private LocalDateTime createdAt;
+    private String lastLoginIp;
+    private LocalDateTime lastLoginDate;
 
     public static MemberResponse from(Member member) {
         return MemberResponse.builder()
@@ -24,6 +26,8 @@ public class MemberResponse {
                 .role(member.getRole().name())
                 .approved(member.isApproved())
                 .createdAt(member.getCreatedAt())
+                .lastLoginIp(member.getLastLoginIp())
+                .lastLoginDate(member.getLastLoginDate())
                 .build();
     }
 }

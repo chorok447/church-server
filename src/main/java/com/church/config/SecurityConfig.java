@@ -33,6 +33,9 @@ public class SecurityConfig {
     @Value("${cors.allowed-origins}")
     private String allowedOrigins;
 
+    @Value("${jwt.cookie-name:jwt}")
+    private String cookieName;
+
     public SecurityConfig(JwtUtil jwtUtil, @Lazy MemberDetailsService memberDetailsService) {
         this.jwtUtil = jwtUtil;
         this.memberDetailsService = memberDetailsService;
@@ -45,13 +48,16 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        JwtAuthorizationFilter jwtFilter = new JwtAuthorizationFilter(jwtUtil, memberDetailsService);
+        jwtFilter.setCookieName(cookieName);
+
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
-                        .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/logout").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/notices/**", "/api/sermons/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/notices/*/comments").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/files/download/**").permitAll()
@@ -67,8 +73,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
-                .addFilterBefore(new JwtAuthorizationFilter(jwtUtil, memberDetailsService),
-                        UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

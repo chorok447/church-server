@@ -10,5 +10,5 @@ FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 # 빌드 스테이지에서 생성된 JAR만 복사
 COPY --from=build /app/build/libs/*.jar app.jar
-EXPOSE 8080
+EXPOSE 4000
 ENTRYPOINT ["java", "-jar", "app.jar"]

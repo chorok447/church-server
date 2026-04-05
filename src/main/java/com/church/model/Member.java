@@ -31,4 +31,10 @@ public class Member extends BaseEntity {
 
     @Column(nullable = false)
     private boolean approved = false;
+
+    @Column(name = "last_login_ip")
+    private String lastLoginIp;
+
+    @Column(name = "last_login_date")
+    private java.time.LocalDateTime lastLoginDate;
 }
