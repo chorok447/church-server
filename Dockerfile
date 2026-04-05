@@ -2,6 +2,8 @@
 FROM eclipse-temurin:17-jdk-jammy AS build
 WORKDIR /app
 COPY . .
+# Gradle 파일 실행 권한 부여
+RUN chmod +x ./gradlew
 # Gradle 사용 시 (Maven이면 ./mvnw clean package)
 RUN ./gradlew clean bootJar
 
