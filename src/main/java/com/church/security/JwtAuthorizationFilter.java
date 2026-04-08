@@ -1,12 +1,10 @@
 package com.church.security;
 
-import com.church.service.MemberDetailsService;
 import jakarta.servlet.http.Cookie;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -20,12 +18,12 @@ import java.io.IOException;
 public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-    private final MemberDetailsService memberDetailsService;
+    private final UserDetailsService userDetailsService;
     private String cookieName = "jwt"; // Default value
 
-    public JwtAuthorizationFilter(JwtUtil jwtUtil, MemberDetailsService memberDetailsService) {
+    public JwtAuthorizationFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
         this.jwtUtil = jwtUtil;
-        this.memberDetailsService = memberDetailsService;
+        this.userDetailsService = userDetailsService;
     }
 
     public void setCookieName(String cookieName) {
@@ -58,7 +56,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
         if (token != null && jwtUtil.validateToken(token)) {
             String email = jwtUtil.extractEmail(token);
-            UserDetails userDetails = memberDetailsService.loadUserByUsername(email);
+            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

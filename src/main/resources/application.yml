@@ -1,6 +1,17 @@
 spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+  cache:
+    type: ${SPRING_CACHE_TYPE:simple}
+    redis:
+      time-to-live: ${REDIS_CACHE_TTL:10m}
+      cache-null-values: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: ${REDIS_TIMEOUT:2s}
   jpa:
     show-sql: true
     open-in-view: false
@@ -19,11 +30,20 @@ logging:
   level:
     org:
       springframework:
-        security: DEBUG
+        security: ${SPRING_SECURITY_LOG_LEVEL:INFO}
 
 jwt:
-  secret: ${JWT_SECRET:vmfhaltnormlow874nd_982ls0t6_asdfghjkl1234567890abcdef}
+  secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:36000000}
+  cookie-name: ${JWT_COOKIE_NAME:jwt}
+  cookie-secure: ${JWT_COOKIE_SECURE:false}
+  cookie-same-site: ${JWT_COOKIE_SAME_SITE:Lax}
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+
+app:
+  seed-default-admin: ${APP_SEED_DEFAULT_ADMIN:false}
+  default-admin-email: ${APP_DEFAULT_ADMIN_EMAIL:}
+  default-admin-password: ${APP_DEFAULT_ADMIN_PASSWORD:}
+  default-admin-name: ${APP_DEFAULT_ADMIN_NAME:}

@@ -8,6 +8,9 @@ import com.church.model.Member;
 import com.church.model.Notice;
 import com.church.repository.NoticeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -34,6 +37,7 @@ public class NoticeService {
         return noticeRepository.findByDeletedFalse(pageable).map(NoticeResponse::from);
     }
 
+    @Cacheable(cacheNames = "publicNoticeList", key = "#sort.toString()")
     public List<NoticeResponse> getAllNoticesSorted(Sort sort) {
         return noticeRepository.findByDeletedFalse(sort)
                 .stream()
@@ -66,6 +70,7 @@ public class NoticeService {
         return toResponseWithAttachments(notice);
     }
 
+    @Cacheable(cacheNames = "pinnedNoticeList")
     public List<NoticeResponse> getPinnedNotices() {
         return noticeRepository.findByDeletedFalseAndPinnedTrueOrderByCreatedAtDesc()
                 .stream()
@@ -73,6 +78,10 @@ public class NoticeService {
                 .collect(Collectors.toList());
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "publicNoticeList", allEntries = true),
+            @CacheEvict(cacheNames = "pinnedNoticeList", allEntries = true)
+    })
     @Transactional
     public NoticeResponse togglePin(Long id) {
         Notice notice = noticeRepository.findById(id)
@@ -81,6 +90,10 @@ public class NoticeService {
         return NoticeResponse.from(noticeRepository.save(notice));
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "publicNoticeList", allEntries = true),
+            @CacheEvict(cacheNames = "pinnedNoticeList", allEntries = true)
+    })
     @Transactional
     public NoticeResponse createNotice(NoticeRequest request, Member author) {
         Notice notice = new Notice();
@@ -99,6 +112,10 @@ public class NoticeService {
         return toResponseWithAttachments(saved);
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "publicNoticeList", allEntries = true),
+            @CacheEvict(cacheNames = "pinnedNoticeList", allEntries = true)
+    })
     @Transactional
     public NoticeResponse updateNotice(Long id, NoticeRequest request) {
         Notice notice = noticeRepository.findById(id)
@@ -119,6 +136,10 @@ public class NoticeService {
         return toResponseWithAttachments(saved);
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "publicNoticeList", allEntries = true),
+            @CacheEvict(cacheNames = "pinnedNoticeList", allEntries = true)
+    })
     @Transactional
     public void deleteNotice(Long id) {
         Notice notice = noticeRepository.findById(id)
