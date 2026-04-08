@@ -20,6 +20,7 @@ import java.util.Set;
 @RestController
 @RequestMapping("/api/sermons")
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class SermonController {
 
     private final SermonService sermonService;

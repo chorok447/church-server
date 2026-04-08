@@ -21,6 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/files")
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class FileController {
 
     private final FileStorageService fileStorageService;

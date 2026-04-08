@@ -24,6 +24,7 @@ import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class FileStorageService {
 
     @Value("${file.upload-dir:./uploads}")

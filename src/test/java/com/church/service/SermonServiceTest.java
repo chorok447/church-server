@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
+@SuppressWarnings("null")
 class SermonServiceTest {
 
     private final SermonRepository sermonRepository = Mockito.mock(SermonRepository.class);

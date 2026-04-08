@@ -22,6 +22,7 @@ import java.util.Set;
 @RestController
 @RequestMapping("/api/notices")
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class NoticeController {
 
     private final NoticeService noticeService;

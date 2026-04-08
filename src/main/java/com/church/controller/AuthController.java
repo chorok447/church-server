@@ -25,10 +25,12 @@ import java.util.HashMap;
 import java.util.Map;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
+import org.springframework.lang.NonNull;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -47,8 +49,8 @@ public class AuthController {
     @Value("${jwt.cookie-same-site:Lax}")
     private String cookieSameSite;
 
-    private void writeJwtCookie(HttpServletResponse response, String value, Duration maxAge) {
-        ResponseCookie cookie = ResponseCookie.from(cookieName, value)
+    private void writeJwtCookie(HttpServletResponse response, @NonNull String value, @NonNull Duration maxAge) {
+        ResponseCookie cookie = ResponseCookie.from(cookieName != null ? cookieName : "jwt", value)
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .sameSite(cookieSameSite)
