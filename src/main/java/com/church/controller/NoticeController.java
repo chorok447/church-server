@@ -4,7 +4,7 @@ import com.church.dto.ApiResponse;
 import com.church.dto.NoticeRequest;
 import com.church.dto.NoticeResponse;
 import com.church.model.Member;
-import com.church.service.MemberDetailsService;
+import com.church.service.MemberAccountService;
 import com.church.service.NoticeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ import java.util.Set;
 public class NoticeController {
 
     private final NoticeService noticeService;
-    private final MemberDetailsService memberDetailsService;
+    private final MemberAccountService memberAccountService;
 
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("id", "title", "date", "createdAt", "viewCount");
 
@@ -106,7 +106,7 @@ public class NoticeController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<NoticeResponse>> createNotice(@Valid @RequestBody NoticeRequest request) {
-        Member author = memberDetailsService.getCurrentMember();
+        Member author = memberAccountService.getCurrentMember();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("공지사항이 등록되었습니다.", noticeService.createNotice(request, author)));
     }

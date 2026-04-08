@@ -2,7 +2,7 @@ package com.church.controller;
 
 import com.church.dto.ApiResponse;
 import com.church.dto.MemberResponse;
-import com.church.service.MemberDetailsService;
+import com.church.service.MemberAdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,14 +16,14 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class MemberController {
 
-    private final MemberDetailsService memberDetailsService;
+    private final MemberAdminService memberAdminService;
 
     /**
      * 전체 회원 목록 조회 (ADMIN 전용)
      */
     @GetMapping
     public ResponseEntity<?> getAllMembers() {
-        List<MemberResponse> members = memberDetailsService.getAllMembers();
+        List<MemberResponse> members = memberAdminService.getAllMembers();
         return ResponseEntity.ok(ApiResponse.success(members));
     }
 
@@ -32,8 +32,8 @@ public class MemberController {
      */
     @GetMapping("/pending")
     public ResponseEntity<?> getPendingMembers() {
-        List<MemberResponse> pending = memberDetailsService.getPendingMembers();
-        long pendingCount = memberDetailsService.getPendingCount();
+        List<MemberResponse> pending = memberAdminService.getPendingMembers();
+        long pendingCount = memberAdminService.getPendingCount();
 
         Map<String, Object> response = new HashMap<>();
         response.put("members", pending);
@@ -47,7 +47,7 @@ public class MemberController {
      */
     @PatchMapping("/{id}/approve")
     public ResponseEntity<?> approveMember(@PathVariable Long id) {
-        MemberResponse member = memberDetailsService.approveMember(id);
+        MemberResponse member = memberAdminService.approveMember(id);
         return ResponseEntity.ok(ApiResponse.success("회원이 승인되었습니다.", member));
     }
 
@@ -56,7 +56,7 @@ public class MemberController {
      */
     @PatchMapping("/{id}/role")
     public ResponseEntity<?> toggleRole(@PathVariable Long id) {
-        MemberResponse member = memberDetailsService.toggleRole(id);
+        MemberResponse member = memberAdminService.toggleRole(id);
         return ResponseEntity.ok(ApiResponse.success("회원 권한이 변경되었습니다.", member));
     }
 
@@ -65,7 +65,7 @@ public class MemberController {
      */
     @DeleteMapping("/{id}/reject")
     public ResponseEntity<?> rejectMember(@PathVariable Long id) {
-        memberDetailsService.rejectMember(id);
+        memberAdminService.rejectMember(id);
         return ResponseEntity.ok(ApiResponse.success("회원 가입이 거부되었습니다.", null));
     }
 }

@@ -1,8 +1,8 @@
-﻿name: Build and Push Test ARM64 Docker Image
+﻿name: Build and Push Release ARM64 Docker Image
 
 on:
   push:
-    branches: ['test']
+    branches: ['master']
 
 jobs:
   build:
@@ -40,5 +40,5 @@ jobs:
           platforms: linux/arm64
           push: true
           tags: |
-            chorok446/church-server:test
-            chorok446/church-server:test-${{ github.sha }}
+            chorok446/church-server:latest
+            chorok446/church-server:${{ github.sha }}

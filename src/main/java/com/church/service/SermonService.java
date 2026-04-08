@@ -6,6 +6,9 @@ import com.church.exception.ResourceNotFoundException;
 import com.church.model.Sermon;
 import com.church.repository.SermonRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -26,6 +29,7 @@ public class SermonService {
         return sermonRepository.findAll(pageable).map(SermonResponse::from);
     }
 
+    @Cacheable(cacheNames = "publicSermonList", key = "#sort.toString()")
     public List<SermonResponse> getAllSermonsSorted(Sort sort) {
         return sermonRepository.findAll(sort)
                 .stream()
@@ -33,12 +37,17 @@ public class SermonService {
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(cacheNames = "publicSermonById", key = "#id")
     public SermonResponse getSermonById(Long id) {
         Sermon sermon = sermonRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("설교", id));
         return SermonResponse.from(sermon);
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "publicSermonList", allEntries = true),
+            @CacheEvict(cacheNames = "publicSermonById", allEntries = true)
+    })
     @Transactional
     public SermonResponse createSermon(SermonRequest request) {
         Sermon sermon = new Sermon();
@@ -50,6 +59,10 @@ public class SermonService {
         return SermonResponse.from(sermonRepository.save(sermon));
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "publicSermonList", allEntries = true),
+            @CacheEvict(cacheNames = "publicSermonById", allEntries = true)
+    })
     @Transactional
     public SermonResponse updateSermon(Long id, SermonRequest request) {
         Sermon sermon = sermonRepository.findById(id)
@@ -62,6 +75,10 @@ public class SermonService {
         return SermonResponse.from(sermonRepository.save(sermon));
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "publicSermonList", allEntries = true),
+            @CacheEvict(cacheNames = "publicSermonById", allEntries = true)
+    })
     @Transactional
     public void deleteSermon(Long id) {
         if (!sermonRepository.existsById(id)) {

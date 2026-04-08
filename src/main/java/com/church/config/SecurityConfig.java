@@ -2,7 +2,6 @@ package com.church.config;
 
 import com.church.security.JwtUtil;
 import com.church.security.JwtAuthorizationFilter;
-import com.church.service.MemberDetailsService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +14,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -28,7 +28,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtUtil jwtUtil;
-    private final MemberDetailsService memberDetailsService;
+    private final UserDetailsService userDetailsService;
 
     @Value("${cors.allowed-origins}")
     private String allowedOrigins;
@@ -36,9 +36,9 @@ public class SecurityConfig {
     @Value("${jwt.cookie-name:jwt}")
     private String cookieName;
 
-    public SecurityConfig(JwtUtil jwtUtil, @Lazy MemberDetailsService memberDetailsService) {
+    public SecurityConfig(JwtUtil jwtUtil, @Lazy UserDetailsService userDetailsService) {
         this.jwtUtil = jwtUtil;
-        this.memberDetailsService = memberDetailsService;
+        this.userDetailsService = userDetailsService;
     }
 
     @Bean
@@ -48,7 +48,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        JwtAuthorizationFilter jwtFilter = new JwtAuthorizationFilter(jwtUtil, memberDetailsService);
+        JwtAuthorizationFilter jwtFilter = new JwtAuthorizationFilter(jwtUtil, userDetailsService);
         jwtFilter.setCookieName(cookieName);
 
         http

@@ -5,7 +5,7 @@ import com.church.dto.CommentRequest;
 import com.church.dto.CommentResponse;
 import com.church.model.Member;
 import com.church.service.CommentService;
-import com.church.service.MemberDetailsService;
+import com.church.service.MemberAccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,7 +20,7 @@ import java.util.List;
 public class CommentController {
 
     private final CommentService commentService;
-    private final MemberDetailsService memberDetailsService;
+    private final MemberAccountService memberAccountService;
 
     @GetMapping("/notices/{noticeId}/comments")
     public ResponseEntity<ApiResponse<List<CommentResponse>>> getComments(@PathVariable Long noticeId) {
@@ -31,14 +31,14 @@ public class CommentController {
     public ResponseEntity<ApiResponse<CommentResponse>> createComment(
             @PathVariable Long noticeId,
             @Valid @RequestBody CommentRequest request) {
-        Member author = memberDetailsService.getCurrentMember();
+        Member author = memberAccountService.getCurrentMember();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("댓글이 등록되었습니다.", commentService.createComment(noticeId, request, author)));
     }
 
     @DeleteMapping("/comments/{commentId}")
     public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable Long commentId) {
-        Member actor = memberDetailsService.getCurrentMember();
+        Member actor = memberAccountService.getCurrentMember();
         commentService.deleteComment(commentId, actor);
         return ResponseEntity.ok(ApiResponse.success("댓글이 삭제되었습니다.", null));
     }

@@ -6,11 +6,13 @@ import com.church.dto.MemberResponse;
 import com.church.dto.RegisterRequest;
 import com.church.model.Member;
 import com.church.security.JwtUtil;
-import com.church.service.MemberDetailsService;
+import com.church.service.MemberAccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.DisabledException;
@@ -21,9 +23,8 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import java.time.Duration;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -32,7 +33,7 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
-    private final MemberDetailsService memberDetailsService;
+    private final MemberAccountService memberAccountService;
 
     @Value("${jwt.cookie-name:jwt}")
     private String cookieName;
@@ -40,13 +41,30 @@ public class AuthController {
     @Value("${jwt.expiration}")
     private long expirationMs;
 
+    @Value("${jwt.cookie-secure:false}")
+    private boolean cookieSecure;
+
+    @Value("${jwt.cookie-same-site:Lax}")
+    private String cookieSameSite;
+
+    private void writeJwtCookie(HttpServletResponse response, String value, Duration maxAge) {
+        ResponseCookie cookie = ResponseCookie.from(cookieName, value)
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .sameSite(cookieSameSite)
+                .path("/")
+                .maxAge(maxAge)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
-            Member member = memberDetailsService.getMemberByEmail(request.getEmail());
+            Member member = memberAccountService.getMemberByEmail(request.getEmail());
             
             String clientIp = httpRequest.getHeader("X-Forwarded-For");
             if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
@@ -55,17 +73,11 @@ public class AuthController {
             if (clientIp != null && clientIp.contains(",")) {
                 clientIp = clientIp.split(",")[0].trim();
             }
-            memberDetailsService.updateLoginInfo(member.getEmail(), clientIp);
+            memberAccountService.updateLoginInfo(member.getEmail(), clientIp);
 
             String token = jwtUtil.generateToken(member.getEmail(), member.getRole().name());
 
-            // Create HttpOnly Cookie
-            Cookie jwtCookie = new Cookie(cookieName, token);
-            jwtCookie.setHttpOnly(true);
-            jwtCookie.setSecure(false); // Set to true in production with HTTPS
-            jwtCookie.setPath("/");
-            jwtCookie.setMaxAge((int) (expirationMs / 1000));
-            httpResponse.addCookie(jwtCookie);
+            writeJwtCookie(httpResponse, token, Duration.ofMillis(expirationMs));
 
             Map<String, Object> response = new HashMap<>();
             // Still returning basic info, but not the token (it's in the cookie)
@@ -86,18 +98,14 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
-        Cookie jwtCookie = new Cookie(cookieName, null);
-        jwtCookie.setHttpOnly(true);
-        jwtCookie.setPath("/");
-        jwtCookie.setMaxAge(0);
-        response.addCookie(jwtCookie);
+        writeJwtCookie(response, "", Duration.ZERO);
         return ResponseEntity.ok(ApiResponse.success("로그아웃 되었습니다."));
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         try {
-            MemberResponse member = memberDetailsService.register(request);
+            MemberResponse member = memberAccountService.register(request);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.success("회원가입 신청이 완료되었습니다. 관리자 승인 후 로그인이 가능합니다.", member));
         } catch (IllegalArgumentException e) {
@@ -109,7 +117,7 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<?> getMe() {
         try {
-            Member member = memberDetailsService.getCurrentMember();
+            Member member = memberAccountService.getCurrentMember();
             return ResponseEntity.ok(ApiResponse.success(MemberResponse.from(member)));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
