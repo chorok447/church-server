@@ -13,6 +13,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class MemberAdminService {
 
     private final MemberRepository memberRepository;

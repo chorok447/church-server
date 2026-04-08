@@ -28,6 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
+@SuppressWarnings("null")
 class NoticeServiceTest {
 
     private final NoticeRepository noticeRepository = Mockito.mock(NoticeRepository.class);
